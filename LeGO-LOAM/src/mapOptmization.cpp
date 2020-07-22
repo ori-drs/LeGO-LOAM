@@ -49,6 +49,7 @@ using namespace gtsam;
 class mapOptimization{
 
 private:
+    std::ofstream filestream;
 
     NonlinearFactorGraph gtSAMgraph;
     Values initialEstimate;
@@ -100,7 +101,7 @@ private:
 
     pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;
     pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;
-
+    pcl::PointCloud<QuatPointTypePose>::Ptr cloudKeyQuatPoses6D;
     
 
     pcl::PointCloud<PointType>::Ptr surroundingKeyPoses;
@@ -161,6 +162,9 @@ private:
     double timeLaserCloudCornerLast;
     double timeLaserCloudSurfLast;
     double timeLaserOdometry;
+    uint32_t timeSecLaserOdometry;
+    uint32_t timeNSecLaserOdometry;
+    uint32_t sec, nsec;
     double timeLaserCloudOutlierLast;
     double timeLastGloalMapPublish;
 
@@ -221,11 +225,19 @@ private:
 
 public:
 
+    struct Time
+    {
+      uint32_t sec, nsec;
+    };
+
+    Time getUtime() {return {timeSecLaserOdometry,timeNSecLaserOdometry};}
+
     
 
     mapOptimization():
         nh("~")
     {
+      filestream.open(std::string("/tmp/aicp_data/legoloam.csv"));
     	ISAM2Params parameters;
 		parameters.relinearizeThreshold = 0.01;
 		parameters.relinearizeSkip = 1;
@@ -628,6 +640,8 @@ public:
 
     void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry){
         timeLaserOdometry = laserOdometry->header.stamp.toSec();
+        timeSecLaserOdometry = laserOdometry->header.stamp.sec;
+        timeNSecLaserOdometry = laserOdometry->header.stamp.nsec;
         double roll, pitch, yaw;
         geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
         tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
@@ -1403,6 +1417,8 @@ public:
          */
         PointType thisPose3D;
         PointTypePose thisPose6D;
+        QuatPointTypePose thisQuatPose6D;
+
         Pose3 latestEstimate;
 
         isamCurrentEstimate = isam->calculateEstimate();
@@ -1422,7 +1438,21 @@ public:
         thisPose6D.pitch = latestEstimate.rotation().yaw();
         thisPose6D.yaw   = latestEstimate.rotation().roll(); // in camera frame
         thisPose6D.time = timeLaserOdometry;
+
+        thisQuatPose6D.qx = latestEstimate.rotation().quaternion()[1];
+        thisQuatPose6D.qy = latestEstimate.rotation().quaternion()[2];
+        thisQuatPose6D.qz = latestEstimate.rotation().quaternion()[3];
+        thisQuatPose6D.qw = latestEstimate.rotation().quaternion()[0];
+        thisQuatPose6D.time = timeLaserOdometry;
+
         cloudKeyPoses6D->push_back(thisPose6D);
+
+        std::stringstream ss;
+        ss << timeSecLaserOdometry <<"," << timeNSecLaserOdometry << "," << thisPose6D.x << "," << thisPose6D.y << "," << thisPose6D.z
+           << "," << thisQuatPose6D.qx << "," << thisQuatPose6D.qy << "," << thisQuatPose6D.qz << "," << thisQuatPose6D.qw;
+        filestream << ss.str() << "\n";
+        filestream.flush();
+
         /**
          * save updated transform
          */
