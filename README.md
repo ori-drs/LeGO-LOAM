@@ -12,10 +12,11 @@ This repository contains code for a lightweight and ground optimized lidar odome
 
 An updated lidar-initial odometry package, [LIO-SAM](https://github.com/TixiaoShan/LIO-SAM), has been open-sourced and available for testing.
 
-## Dependency
+## Dependency (Added dependency for LeGO-LOAM to be played with Ouster IMU)
 
 - [ROS](http://wiki.ros.org/ROS/Installation) (tested with indigo, kinetic, and melodic)
 - [gtsam](https://github.com/borglab/gtsam/releases) (Georgia Tech Smoothing and Mapping library, 4.0.0-alpha2)
+- [imu_filter_madgwick](https://github.com/ori-drs/imu_tools) IMU Fusion library
   ```
   wget -O ~/Downloads/gtsam.zip https://github.com/borglab/gtsam/archive/4.0.0-alpha2.zip
   cd ~/Downloads/ && unzip gtsam.zip -d ~/Downloads/
@@ -32,6 +33,7 @@ You can use the following commands to download and compile the package.
 ```
 cd ~/catkin_ws/src
 git clone https://github.com/RobustFieldAutonomyLab/LeGO-LOAM.git
+git clone git@github.com:ori-drs/imu_tools.git
 cd ..
 catkin_make -j1
 ```

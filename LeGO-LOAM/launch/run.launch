@@ -10,6 +10,8 @@
     <remap from="/imu/data" to="/sensors/imu_at_base" /> 
 -->
     <remap from="/velodyne_points" to="/os1_cloud_node/points" />
+    <remap from="/imu/data" to="/os1_cloud_node/imu_with_orientation" />
+
 
     <!--- TF -->
 <!--
@@ -17,14 +19,21 @@
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 -1.570795 -1.570795 0        /camera /base_link   10" />
 -->
 
- <node pkg="tf" type="static_transform_publisher" name="camera_init_to_map"  args="0 0 0 0  2.356194  -1.570795 /camera_init /map 10" />
+    <node pkg="tf" type="static_transform_publisher" name="camera_init_to_map"  args="0 0 0 0  2.356194  -1.570795 /camera_init /map 10" />
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 3.1415 0.785398 1.570795       /camera /base_link   10" />
-
+    <node pkg="tf" type="static_transform_publisher" name="gt_odom_to_map"      args="8.65 1 0.132013 1.3 0 0 /map  /ground_truth_odom   10" />
 
     <!--- LeGO-LOAM -->    
     <node pkg="lego_loam" type="imageProjection"    name="imageProjection"    output="screen"/>
     <node pkg="lego_loam" type="featureAssociation" name="featureAssociation" output="screen"/>
     <node pkg="lego_loam" type="mapOptmization"     name="mapOptmization"     output="screen"/>
     <node pkg="lego_loam" type="transformFusion"    name="transformFusion"    output="screen"/>
+
+    <node name="imu_filter_node" pkg="imu_filter_madgwick" type="imu_filter_node" output="screen">
+        <remap from="/imu" to="/os1_cloud_node/imu" />
+        <remap from="/mag" to="/imu/DONOTHING/mag" />
+        <remap from="/imu_out" to="/os1_cloud_node/imu_with_orientation" />
+        <param name="use_mag" value="false" />
+    </node>
 
 </launch>
