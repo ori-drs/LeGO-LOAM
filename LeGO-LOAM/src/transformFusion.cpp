@@ -35,6 +35,9 @@
 class TransformFusion{
 
 private:
+    std::ofstream filestream;
+    uint32_t timeSecLaserOdometry;
+    uint32_t timeNSecLaserOdometry;
 
     ros::NodeHandle nh;
 
@@ -65,6 +68,7 @@ private:
 public:
 
     TransformFusion(){
+        filestream.open(std::string("/tmp/ncd/legoloam.csv"));
 
         pubLaserOdometry2 = nh.advertise<nav_msgs::Odometry> ("/integrated_to_init", 5);
         pubLaserOdometryRooster = nh.advertise<nav_msgs::Odometry> ("/rooster_odom_to_base", 5);
@@ -183,6 +187,8 @@ public:
     void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
     {
         currentHeader = laserOdometry->header;
+        timeSecLaserOdometry = laserOdometry->header.stamp.sec;
+        timeNSecLaserOdometry = laserOdometry->header.stamp.nsec;
 
         double roll, pitch, yaw;
         geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
@@ -269,6 +275,18 @@ public:
 
         pubLaserOdometryRooster.publish(odom2rooster);
 
+        std::stringstream ss;
+        ss << timeSecLaserOdometry << "," << timeNSecLaserOdometry << ","
+           << odom2rooster.pose.pose.position.x << ","
+           << odom2rooster.pose.pose.position.y << ","
+           << odom2rooster.pose.pose.position.z << ","
+           << odom2rooster.pose.pose.orientation.x << ","
+           << odom2rooster.pose.pose.orientation.y << ","
+           << odom2rooster.pose.pose.orientation.z << ","
+           << odom2rooster.pose.pose.orientation.w;
+        filestream << ss.str() << "\n";
+        filestream.flush();
+
         //////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////
     }
@@ -295,6 +313,7 @@ public:
         transformBefMapped[4] = odomAftMapped->twist.twist.linear.y;
         transformBefMapped[5] = odomAftMapped->twist.twist.linear.z;
     }
+
 };
 
 

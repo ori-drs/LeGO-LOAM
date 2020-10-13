@@ -49,7 +49,6 @@ using namespace gtsam;
 class mapOptimization{
 
 private:
-  std::ofstream filestream;
 
   NonlinearFactorGraph gtSAMgraph;
   Values initialEstimate;
@@ -237,7 +236,6 @@ public:
   mapOptimization():
       nh("~")
   {
-    filestream.open(std::string("/tmp/aicp_data/legoloam.csv"));
     ISAM2Params parameters;
     parameters.relinearizeThreshold = 0.01;
     parameters.relinearizeSkip = 1;
@@ -1452,12 +1450,6 @@ public:
     thisQuatPose6D.time = timeLaserOdometry;
 
     cloudKeyPoses6D->push_back(thisPose6D);
-
-    std::stringstream ss;
-    ss << timeSecLaserOdometry <<"," << timeNSecLaserOdometry << "," << thisPose6D.x << "," << thisPose6D.y << "," << thisPose6D.z
-       << "," << thisQuatPose6D.qx << "," << thisQuatPose6D.qy << "," << thisQuatPose6D.qz << "," << thisQuatPose6D.qw;
-    filestream << ss.str() << "\n";
-    filestream.flush();
 
     /**
      * save updated transform
