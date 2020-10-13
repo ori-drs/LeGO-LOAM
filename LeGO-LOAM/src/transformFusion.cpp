@@ -39,6 +39,7 @@ private:
     ros::NodeHandle nh;
 
     ros::Publisher pubLaserOdometry2;
+    ros::Publisher pubLaserOdometryRooster;
     ros::Subscriber subLaserOdometry;
     ros::Subscriber subOdomAftMapped;
   
@@ -66,6 +67,7 @@ public:
     TransformFusion(){
 
         pubLaserOdometry2 = nh.advertise<nav_msgs::Odometry> ("/integrated_to_init", 5);
+        pubLaserOdometryRooster = nh.advertise<nav_msgs::Odometry> ("/rooster_odom_to_base", 5);
         subLaserOdometry = nh.subscribe<nav_msgs::Odometry>("/laser_odom_to_init", 5, &TransformFusion::laserOdometryHandler, this);
         subOdomAftMapped = nh.subscribe<nav_msgs::Odometry>("/aft_mapped_to_init", 5, &TransformFusion::odomAftMappedHandler, this);
 
@@ -213,6 +215,62 @@ public:
         laserOdometryTrans2.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
         laserOdometryTrans2.setOrigin(tf::Vector3(transformMapped[3], transformMapped[4], transformMapped[5]));
         tfBroadcaster2.sendTransform(laserOdometryTrans2);
+
+        //////////////////////////////////////////////////////////////
+        /////////////////// New code - David Wisth ///////////////////
+
+        auto odom2rooster = laserOdometry2;
+        odom2rooster.header.frame_id = "/map";
+        odom2rooster.child_frame_id  = "/base";
+
+        // This is copied from the launch file.
+        Eigen::Isometry3d T_map_camerainit = Eigen::Isometry3d::Identity();
+        T_map_camerainit.translation() = Eigen::Vector3d{0,0,0};
+        T_map_camerainit.linear() = Eigen::Quaterniond{-0.271,-0.271, 0.653, 0.653}.toRotationMatrix();
+        std::cout << "T_map_camerainit:\n" << T_map_camerainit.matrix() << std::endl;
+
+        // Transform for the lego-loam estimate;
+        // Note: The lidar frame is confusingly called "camera" in this system.
+        Eigen::Isometry3d T_camerainit_camera = Eigen::Isometry3d::Identity();
+        T_camerainit_camera.translation() = Eigen::Vector3d{laserOdometry2.pose.pose.position.x,
+                                                           laserOdometry2.pose.pose.position.y,
+                                                           laserOdometry2.pose.pose.position.z};
+        T_camerainit_camera.linear() = Eigen::Quaterniond{laserOdometry2.pose.pose.orientation.w,
+                                                         laserOdometry2.pose.pose.orientation.x,
+                                                         laserOdometry2.pose.pose.orientation.y,
+                                                         laserOdometry2.pose.pose.orientation.z}.toRotationMatrix();
+        std::cout << "T_camerainit_lidar:\n" << T_camerainit_camera.matrix() << std::endl;
+
+        // This is copied from the launch file.
+        Eigen::Isometry3d T_camera_base = Eigen::Isometry3d::Identity();
+        T_camera_base.translation() = Eigen::Vector3d{0,0,0};
+        T_camera_base.linear() = Eigen::Quaterniond{0.271,-0.271, 0.653, 0.653}.toRotationMatrix();
+        std::cout << "T_camera_base:\n" << T_camera_base.matrix() << std::endl;
+
+        // Transform for the rooster base-to-lidar transform.
+        Eigen::Isometry3d T_base_translation_only = Eigen::Isometry3d::Identity();
+        T_base_translation_only.translation() = Eigen::Vector3d{-0.084, -0.025, 0.050};
+        // T_base_lidar.linear() = Eigen::Quaterniond(0.383, 0.000, 0.000, 0.924).toRotationMatrix(); // Note: This rotation is already accounted for in T_camera_base
+        std::cout << "T_base_translation_only:\n" << T_base_translation_only.matrix() << std::endl;
+
+        Eigen::Isometry3d T_camerainit_base = T_map_camerainit * T_camerainit_camera * T_camera_base * T_base_translation_only;
+        std::cout << T_camerainit_base.matrix() << std::endl;
+
+        Eigen::Quaterniond q(T_camerainit_base.linear());
+        Eigen::Vector3d r(T_camerainit_base.translation());
+
+        odom2rooster.pose.pose.orientation.x = q.x();
+        odom2rooster.pose.pose.orientation.y = q.y();
+        odom2rooster.pose.pose.orientation.z = q.z();
+        odom2rooster.pose.pose.orientation.w = q.w();
+        odom2rooster.pose.pose.position.x    = r[0];
+        odom2rooster.pose.pose.position.y    = r[1];
+        odom2rooster.pose.pose.position.z    = r[2];
+
+        pubLaserOdometryRooster.publish(odom2rooster);
+
+        //////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////
     }
 
     void odomAftMappedHandler(const nav_msgs::Odometry::ConstPtr& odomAftMapped)
