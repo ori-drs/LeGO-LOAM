@@ -227,7 +227,7 @@ public:
         Eigen::Isometry3d T_map_camerainit = Eigen::Isometry3d::Identity();
         T_map_camerainit.translation() = Eigen::Vector3d{0,0,0};
         T_map_camerainit.linear() = Eigen::Quaterniond{-0.271,-0.271, 0.653, 0.653}.toRotationMatrix();
-        std::cout << "T_map_camerainit:\n" << T_map_camerainit.matrix() << std::endl;
+        // std::cout << "T_map_camerainit:\n" << T_map_camerainit.matrix() << std::endl;
 
         // Transform for the lego-loam estimate;
         // Note: The lidar frame is confusingly called "camera" in this system.
@@ -239,22 +239,22 @@ public:
                                                          laserOdometry2.pose.pose.orientation.x,
                                                          laserOdometry2.pose.pose.orientation.y,
                                                          laserOdometry2.pose.pose.orientation.z}.toRotationMatrix();
-        std::cout << "T_camerainit_lidar:\n" << T_camerainit_camera.matrix() << std::endl;
+        // std::cout << "T_camerainit_lidar:\n" << T_camerainit_camera.matrix() << std::endl;
 
         // This is copied from the launch file.
         Eigen::Isometry3d T_camera_base = Eigen::Isometry3d::Identity();
         T_camera_base.translation() = Eigen::Vector3d{0,0,0};
         T_camera_base.linear() = Eigen::Quaterniond{0.271,-0.271, 0.653, 0.653}.toRotationMatrix();
-        std::cout << "T_camera_base:\n" << T_camera_base.matrix() << std::endl;
+        // std::cout << "T_camera_base:\n" << T_camera_base.matrix() << std::endl;
 
         // Transform for the rooster base-to-lidar transform.
         Eigen::Isometry3d T_base_translation_only = Eigen::Isometry3d::Identity();
         T_base_translation_only.translation() = Eigen::Vector3d{-0.084, -0.025, 0.050};
         // T_base_lidar.linear() = Eigen::Quaterniond(0.383, 0.000, 0.000, 0.924).toRotationMatrix(); // Note: This rotation is already accounted for in T_camera_base
-        std::cout << "T_base_translation_only:\n" << T_base_translation_only.matrix() << std::endl;
+        // std::cout << "T_base_translation_only:\n" << T_base_translation_only.matrix() << std::endl;
 
         Eigen::Isometry3d T_camerainit_base = T_map_camerainit * T_camerainit_camera * T_camera_base * T_base_translation_only;
-        std::cout << T_camerainit_base.matrix() << std::endl;
+        // std::cout << T_camerainit_base.matrix() << std::endl;
 
         Eigen::Quaterniond q(T_camerainit_base.linear());
         Eigen::Vector3d r(T_camerainit_base.translation());
