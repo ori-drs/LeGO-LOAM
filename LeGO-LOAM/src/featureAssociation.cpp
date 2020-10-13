@@ -443,8 +443,8 @@ public:
 
         imuTime[imuPointerLast] = imuIn->header.stamp.toSec();
 
-        imuRoll[imuPointerLast] = roll;
-        imuPitch[imuPointerLast] = pitch;
+        imuRoll[imuPointerLast]  = -roll;
+        imuPitch[imuPointerLast] = -pitch;
         imuYaw[imuPointerLast] = yaw;
 
         imuAccX[imuPointerLast] = accX;

@@ -666,8 +666,8 @@ public:
 
     imuPointerLast = (imuPointerLast + 1) % imuQueLength;
     imuTime[imuPointerLast] = imuIn->header.stamp.toSec();
-    imuRoll[imuPointerLast] = roll;
-    imuPitch[imuPointerLast] = pitch;
+    imuRoll[imuPointerLast]  = -roll;
+    imuPitch[imuPointerLast] = -pitch;
 
   }
 
