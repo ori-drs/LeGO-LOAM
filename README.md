@@ -39,6 +39,15 @@ catkin_make -j1
 ```
 When you compile the code for the first time, you need to add "-j1" behind "catkin_make" for generating some message types. "-j1" is not needed for future compiling.
 
+## Save the odometry estimation and convert to tum format
+
+The trajectories are saved by default in `/tmp/ncd/`. But you have to make sure that this folder exists. 
+
+To convert the resulting csv to tum format use the command:
+```
+python tum_format.py
+```
+
 ## The system
 
 LeGO-LOAM is speficifally optimized for a horizontally placed VLP-16 on a ground vehicle. It assumes there is always a ground plane in the scan. The UGV we are using is Clearpath Jackal. It has a built-in IMU. 
